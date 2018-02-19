@@ -12,17 +12,18 @@ db.once('open', function(){
 });
 
 // Check for DB errors
+// register an event listener for event from db object
 db.on('error', function(error){
   console.log(err);
 });
 
-// Init App
+// Init App object - effectively the API
 const app = express();
 
-// Bring in Models
+// Bring in Models (another import really)
 let Article = require('./models/article');
 
-// Load View Engine
+// Load View Engine - all to do with rendering with pug
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
@@ -33,6 +34,8 @@ app.use(bodyParser.urlencoded({ extended: false}))
 app.use(bodyParser.json())
 
 // Set Public Folder
+// For Bower (another type of package manager for front end)
+// Setting permissions to access the public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Home Route
@@ -50,6 +53,15 @@ app.get('/', function(req, res){
   });
 
 });
+
+// Get Single Article
+app.get('/article/:id', function(req, res){
+  Article.findById(req.params.id, function(err, article){
+    res.render('article', {
+      article:article
+    })
+  })
+})
 
 // Add Route
 app.get('/articles/add', function(req, res){
@@ -72,9 +84,38 @@ app.post('/articles/add', function(req, res){
     } else {
       res.redirect('/');
     }
-  })
+  });
+});
 
-})
+// Load Edit Form
+app.get('/article/edit/:id', function(req, res){
+  Article.findById(req.params.id, function(err, article){
+    res.render('edit_article', {
+      title:'Edit Article',
+      article:article
+    });
+  });
+});
+
+// Update Submit POST Route
+// technically not posting but putting
+app.post('/articles/edit/:id', function(req, res){
+  let article = {}; // setting to emplty object
+  article.title = req.body.title;
+  article.author = req.body.author;
+  article.body = req.body.body;
+
+  let query = {_id:req.params.id}
+
+  Article.update(query, article, function(err){
+    if(err){
+      console.log(err);
+      return;
+    } else {
+      res.redirect('/');
+    }
+  });
+});
 
 app.listen(3000, function(){
   console.log('Server started on port 3000...')
