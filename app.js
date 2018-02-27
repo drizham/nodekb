@@ -109,20 +109,35 @@ app.get('/articles/add', function(req, res){
 
 // Add Submit POST Route
 app.post('/articles/add', function(req, res){
-  let article = new Article();
-  article.title = req.body.title;
-  article.author = req.body.author;
-  article.body = req.body.body;
+  // Checks for the submission fields
+  req.checkBody('title', 'Title is required').notEmpty();
+  req.checkBody('author', 'Author is required').notEmpty();
+  req.checkBody('body', 'Author is required').notEmpty();
 
-  article.save(function(err){
-    if(err){
-      console.log(err);
-      return;
-    } else {
-      req.flash('success', 'Article Added')
-      res.redirect('/');
-    }
-  });
+  // Get Errors
+  let errors = req.validationErrors();
+
+  if(errors){
+    res.render('add_article', {
+      title:'Add Article', // must as else label will be blank
+      errors:errors
+    });
+  } else {
+    let article = new Article();
+    article.title = req.body.title;
+    article.author = req.body.author;
+    article.body = req.body.body;
+
+    article.save(function(err){
+      if(err){
+        console.log(err);
+        return;
+      } else {
+        req.flash('success', 'Article Added')
+        res.redirect('/');
+      }
+    });
+  }
 });
 
 // Load Edit Form
