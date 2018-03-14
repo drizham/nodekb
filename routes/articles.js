@@ -6,6 +6,8 @@ const router = express.Router();
 
 // Bring in Article Models
 let Article = require('../models/article') // note the double dot
+// Bring in User Models
+let User = require('../models/user') // give access to user object
 
 // Add Route
 router.get('/add', function(req, res){
@@ -18,7 +20,7 @@ router.get('/add', function(req, res){
 router.post('/add', function(req, res){
   // Checks for the submission fields
   req.checkBody('title', 'Title is required').notEmpty();
-  req.checkBody('author', 'Author is required').notEmpty();
+  //req.checkBody('author', 'Author is required').notEmpty();
   req.checkBody('body', 'Author is required').notEmpty();
 
   // Get Errors
@@ -32,7 +34,7 @@ router.post('/add', function(req, res){
   } else {
     let article = new Article();
     article.title = req.body.title;
-    article.author = req.body.author;
+    article.author = req.user._id; // get user id from the user object
     article.body = req.body.body;
 
     article.save(function(err){
@@ -92,9 +94,12 @@ router.delete('/:id', function(req, res){
 // Get Single Article
 router.get('/:id', function(req, res){
   Article.findById(req.params.id, function(err, article){
-    res.render('article', {
-      article:article
-    })
+    User.findById(article.author, function(err, user){
+      res.render('article', {
+        article:article,
+        author:user.name
+      })
+    });
   })
 })
 
