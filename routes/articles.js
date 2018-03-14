@@ -10,7 +10,7 @@ let Article = require('../models/article') // note the double dot
 let User = require('../models/user') // give access to user object
 
 // Add Route
-router.get('/add', function(req, res){
+router.get('/add', ensureAuthenticated, function(req, res){
   res.render('add_article', {
     title:'Add Article'
   });
@@ -50,8 +50,12 @@ router.post('/add', function(req, res){
 });
 
 // Load Edit Form
-router.get('/edit/:id', function(req, res){
+router.get('/edit/:id', ensureAuthenticated, function(req, res){
   Article.findById(req.params.id, function(err, article){
+    if (article.author != req.user._id){
+      req.flash('danger', 'Not Authorized');
+      res.redirect('/'); // redirect to home page
+    }
     res.render('edit_article', {
       title:'Edit Article',
       article:article
@@ -81,13 +85,23 @@ router.post('/edit/:id', function(req, res){
 
 // a whole load of AJAX etc just for the delete, watch part 7 for details
 router.delete('/:id', function(req, res){
+  if(!req.user._id){
+    res.status(500).send(); // failure status
+  }
+
   let query = {_id:req.params.id}
 
-  Article.remove(query, function(err){
-    if(err){
-      console.log(err);
+  Article.findById(req.params.id, function(err, article){
+    if(article.author != req.user._id){
+      res.status(500).send();
+    } else{
+      Article.remove(query, function(err){
+        if(err){
+          console.log(err);
+        }
+        res.send('Success')
+      })
     }
-    res.send('Success')
   })
 })
 
@@ -102,6 +116,16 @@ router.get('/:id', function(req, res){
     });
   })
 })
+
+// Access Control
+function ensureAuthenticated(req, res, next){
+  if(req.isAuthenticated()){
+    return next();
+  } else {
+    req.flash('danger', 'Please login you cunt');
+    res.redirect('/users/login');
+  }
+}
 
 // to be able to access the module from the outside
 module.exports = router;
